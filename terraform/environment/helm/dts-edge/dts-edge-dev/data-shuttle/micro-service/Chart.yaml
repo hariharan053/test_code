@@ -1,0 +1,7 @@
+apiVersion: v1
+description: A Helm chart for deploying micro-services in kubenetes
+name: micro-services
+version: 0.1.0
+maintainers:
+- name: Devops
+  email: hmani@concertohealthai.com

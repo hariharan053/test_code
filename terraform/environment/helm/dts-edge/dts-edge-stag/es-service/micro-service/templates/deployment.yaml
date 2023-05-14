@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: pedatabase
+  name: pedatabase
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+  creationTimestamp: null
+  labels:
+    io.kompose.service: "{{ .Values.microService.name }}"
+  name: "{{ .Values.microService.name }}"
+  namespace: {{ .Values.microService.namespace }}
+spec:
+  selector:
+    matchLabels:
+      io.kompose.service: "{{ .Values.microService.name }}"
+      name: "{{ .Values.microService.name }}"
+  replicas: {{ .Values.microService.replicas }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: "{{ .Values.microService.name }}"
+        name: "{{ .Values.microService.name }}"
+    spec:
+      containers:
+      - resources:
+          requests:
+            memory: {{ .Values.microService.memory }}
+            cpu: {{ .Values.microService.cpu }}
+          limits:
+            cpu: {{ .Values.microService.max_cpu }}
+            memory: {{ .Values.microService.max_memory }}
+        args:
+        env:
+        {{- range $k, $v := .Values.microService.EnvVariable }}
+        - name: {{ $k }}
+          value: {{ $v | quote -}}
+        {{ end }}
+        image: {{ .Values.microService.image }}
+        name: "{{ .Values.microService.name }}"
+        ports:
+        - containerPort: {{ .Values.microService.port }}
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    io.kompose.service: "{{ .Values.microService.name }}"
+  name: "{{ .Values.microService.name }}"
+  namespace: {{ .Values.microService.namespace }}
+spec:
+  type: NodePort 
+  ports:
+  - name: "http"
+    port: {{ .Values.microService.port }}
+    targetPort: {{ .Values.microService.port }}
+    nodePort: 30019
+  - name: "healthcheck"
+    port: 80
+    targetPort: 80
+    nodePort: 30082
+  selector:
+    io.kompose.service: "{{ .Values.microService.name }}"
+status:
+  loadBalancer:
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: "{{ .Values.microService.name }}"
+  namespace: {{ .Values.microService.namespace }}
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/certificate-arn: "{{ .Values.microService.acm }}"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-FS-1-2-Res-2020-10
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTPS
+    alb.ingress.kubernetes.io/security-groups: "{{ .Values.microService.sg }}"
+    #alb.ingress.kubernetes.io/wafv2-acl-arn: "{{ .Values.microService.waf_id }}"
+    alb.ingress.kubernetes.io/load-balancer-attributes: access_logs.s3.enabled=true,access_logs.s3.bucket=emol-access-logs-1,idle_timeout.timeout_seconds=300
+  labels:
+    app: nginx-ingress
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: "{{ .Values.microService.name }}"
+            port: 
+              number: {{ .Values.microService.port }}

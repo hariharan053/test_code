@@ -1,0 +1,24 @@
+# This is a YAML-formatted file.
+# Declare variables to be passed into helm templates.
+microService:
+  name: dts-dev-postgres-backup
+  namespace: dev
+  replicas: 1
+  image: "concertohealthai/edgeserver:dts-edge-db-backup"
+  memory: 4Gi
+  cpu: 2
+  max_memory: 4Gi
+  max_cpu: 2
+  port: 443
+  acm: 	"arn:aws:acm:us-east-1:797970637915:certificate/46de82d7-d95f-43b6-a921-c92add23820d"
+  sg: sg-0cd3587ff45624d5b
+  EnvVariable:
+    GENOMIC_API_URL: 'https://genomics.api.emolhealth.com/v1'
+    S3_BUCKET: s3://dts-edge-server/db_backup/
+    APPLICATION_DB_NAME: 'postgres'
+    DB_HOST: 'internal-a3e88ad2ec29040a09cf5986363f73dc-2096084447.us-east-1.elb.amazonaws.com'
+    port_postgres: '5432'
+    APPLICATION_DB_USER: 'admin'
+    APPLICATION_DB_PASSWORD: 'test1234'
+    NEW_RELIC_APP_NAME: 'dts-edge-server'
+    NEW_RELIC_LICENSE_KEY: '5962eae00eb6625249f68503944299ab9f3bNRAL'

@@ -1,0 +1,98 @@
+apiVersion: v1
+items:
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      io.kompose.service: dts-edge-server
+    name: dts-edge-server
+  spec:
+    progressDeadlineSeconds: 2147483647
+    replicas: 1
+    revisionHistoryLimit: 2147483647
+    selector:
+      matchLabels:
+        io.kompose.service: dts-edge-server
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          io.kompose.service: dts-edge-server
+      spec:
+        containers:
+        - env:
+          - name: GENOMIC_API_URL
+            value: 'https://genomics.api.emolhealth.com/v1'
+          - name: S3_BUCKET
+            value: dts-edge-server
+          - name: APPLICATION_DB_NAME
+            value: 'postgres'
+          - name: APPLICATION_DB_HOST
+            value: 'internal-a3a04b30460f34611bd64172d577a173-1624705360.us-east-1.elb.amazonaws.com'
+          - name: port
+            value: '5432'
+          - name: user
+            value: 'admin'
+          - name: password
+            value: 'test1234'
+          - name: NEW_RELIC_APP_NAME
+            value: 'dts-edge-server'
+          - name: NEW_RELIC_LICENSE_KEY
+            value: '5962eae00eb6625249f68503944299ab9f3bNRAL'
+          image: concertohealthai/edgeserver:dts-edge-server-1
+          imagePullPolicy: IfNotPresent
+          name: dts-edge-server
+          ports:
+          - containerPort: 443
+            protocol: TCP
+          resources:
+            requests:
+              cpu: "2"
+              memory: 2Gi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        imagePullSecrets:
+        - name: regcred
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-access-log-emit-interval: "60"
+      service.beta.kubernetes.io/aws-load-balancer-access-log-enabled: "true"
+      service.beta.kubernetes.io/aws-load-balancer-access-log-s3-bucket-name: emol-access-logs-1
+      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: https
+      service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "1200"
+      service.beta.kubernetes.io/aws-load-balancer-internal: 0.0.0.0/0
+      #service.beta.kubernetes.io/aws-load-balancer-ssl-cert: arn:aws:acm:us-east-1:521900856904:certificate/7d14cbf7-8b11-41c3-8798-8aacd48c4f70
+      service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: ELBSecurityPolicy-TLS-1-2-2017-01
+      service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "443"
+    creationTimestamp: null
+    labels:
+      io.kompose.service: dts-edge-server
+    name: dts-edge-server
+  spec:
+    type: NodePort
+    externalTrafficPolicy: Cluster
+    ports:
+    - name: "443"
+      port: 443
+      protocol: TCP
+      targetPort: 443
+      nodePort: 30001
+    selector:
+      io.kompose.service: dts-edge-server
+    sessionAffinity: None
+    type: LoadBalancer
+  status:
+    loadBalancer: {}
+kind: List
+metadata: {}

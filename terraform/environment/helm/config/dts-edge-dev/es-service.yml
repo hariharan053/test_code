@@ -1,0 +1,19 @@
+# This is a YAML-formatted file.
+# Declare variables to be passed into helm templates.
+microService:
+  name: dts-dev-dev-es-service
+  namespace: dev-dev
+  replicas: 1
+  image: "concertohealthai/edgeserver:es_service-5"
+  memory: 4Gi
+  cpu: 2
+  max_memory: 4Gi
+  max_cpu: 2
+  port: 443
+  healthcheckport: 30053
+  nodeport: 30023
+  acm: 	"arn:aws:acm:us-east-1:797970637915:certificate/46de82d7-d95f-43b6-a921-c92add23820d"
+  sg: sg-0cd3587ff45624d5b
+  EnvVariable:
+    S3_BUCKET: emol-dev-edge-server
+    SECRET_ID: dts-edge-dev

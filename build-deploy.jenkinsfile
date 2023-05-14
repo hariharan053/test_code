@@ -1,0 +1,71 @@
+#!/usr/bin/env groovy
+import hudson.model.*
+import com.tikal.jenkins.plugins.multijob.*;
+def service = params.service
+def tag = params.tag
+def tenant = params.tenant
+
+def repo = commonlib.getRepo()
+def region = commonlib.findRegionByTenant(regions)
+print "region is : ${region}"
+def devops_repo = 'devops-global-eu'
+
+node('docker') {
+     def app
+     jsonContent = commonlib.getBuildConfig(repo, devops_repo, region)
+     def docker_registry = commonlib.getValueFromJson(jsonContent, tenant, 'docker_registry')
+     def default_image = commonlib.getValueFromJson(jsonContent, tenant, 'default_image')
+     def node_low_image = commonlib.getValueFromJson(jsonContent, tenant, 'node_low_image')
+
+  try {
+  currentBuild.displayName = "${tenant}-${service}-${tag}"
+  commonlib.notifyBuild("Build", "Started", slack_web_hook, channel)
+  stage('Clean Workspace') {
+    deleteDir()
+    sh 'pwd'
+  }
+
+  stage('Validate Tag') {
+       tag_check = sh (
+       script: "git ls-remote --tags ${repo}/${service}-${tenant} | awk '{print \$2}' | grep -v '{}' | awk -F\"/\" '{print \$3}' | grep -w \"^${tag}\$\"",
+       returnStdout: true
+       ).trim()
+  }
+
+  stage('Npm install') {
+
+     sh "cd ${service};rm -f package-lock.json;npm cache clean --force;TENANT=${tenant} npm install --production"
+}
+
+  stage('Build image') {
+     if {
+
+
+    }
+    else
+    {
+
+    <Build Step>
+    }
+
+
+  stage('Push image') {
+    /* Finally, we'll push the image with two tags:
+     * First, the incremental build number from Jenkins
+     * Second, the 'latest' tag.
+     * Pushing multiple tags is cheap, as all the layers are reused. */
+    docker.withRegistry("https://${docker_registry}", 'docker-registry-credentials') {
+      app.push()
+    }
+    }
+    currentBuild.result = "SUCCESS"
+    }
+       catch (e) {
+    // If there was an exception thrown, the build failed
+    currentBuild.result = "Failed"
+    throw e
+  } finally {
+    // Success or failure, always send notifications
+    commonlib.notifyBuild("Build", currentBuild.result, slack_web_hook, channel)
+  }
+}
